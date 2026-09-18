@@ -1,0 +1,17 @@
+[Unit]
+Description=Initialize Ranch LTE and USB Wi-Fi hotspot
+Wants=NetworkManager.service ModemManager.service
+After=NetworkManager.service ModemManager.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/ranch-hotspot/hotspot.py start
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=240
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

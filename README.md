@@ -2,7 +2,7 @@
 
 A Raspberry Pi–based LTE hotspot intended to provide Wi-Fi around a rural horse ranch or barn. The LTE modem connects to a cellular network through two external antennas, and the Pi shares that connection with nearby devices over Wi-Fi.
 
-> **Project status:** Hardware plan and setup guide. The complete assembly, carrier connection, and Wi-Fi access point have not yet been tested together.
+> **Project status:** The [service framework](service/README.md) now includes an installer, initialization program, configuration template, boot service and offline tests. The complete assembly, carrier connection, and Wi-Fi access point have not yet been tested together.
 
 ## How it fits together
 
@@ -44,7 +44,7 @@ The LTE antennas serve the **cellular modem**. The BrosTrend dongle serves **loc
 ## Assembly
 
 1. Power everything off. Insert the SIM into the adapter in the orientation marked on its slot, and secure the EM060K-GL in the M.2 B-key socket.
-2. Gently attach the two U.FL leads to the modem's **main** and **aux/diversity** antenna ports as labeled on the module or adapter. U.FL connectors are small and easy to damage; press them straight down without twisting.
+2. Verify the pigtails' exact miniature connector series against the modem before attaching them; a generic U.FL label does not establish compatibility. See [hardware checks](service/docs/HARDWARE.md). Attach correctly mating leads to **ANT_MAIN** and **ANT_DRx/GNSS** without forcing them.
 3. Attach each lead's female N-type end to an LTE antenna. Mount the antennas securely, route cables away from pinch points and water entry, and avoid tight bends.
 4. Connect the modem adapter and BrosTrend dongle to USB ports on the Pi. Connect power only after the antenna leads are attached.
 
@@ -83,4 +83,4 @@ NetworkManager can provide the local address, DHCP, and connection sharing for a
 - [Raspberry Pi wireless configuration documentation](https://www.raspberrypi.com/documentation/computers/configuration.html)
 - [BrosTrend Linux support and installation guidance](https://linux.brostrend.com/)
 
-This README documents the planned build. It does not include an automated installer or claim a tested carrier, modem, or Wi-Fi configuration.
+Start with the [service setup guide](service/README.md) for the implemented framework. The package has passed offline checks; physical-device acceptance remains necessary.
