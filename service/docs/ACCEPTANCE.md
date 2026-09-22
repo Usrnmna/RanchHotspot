@@ -2,6 +2,8 @@
 
 Record the OS version, kernel, USB IDs, driver, modem firmware and carrier/APN used. Keep IMEI, SIM identifiers and passwords out of shared logs.
 
+These are **baseline bring-up** checks before enabling the upload gate. After installing it, use the [upload-gate acceptance checks](UPLOAD_GATE.md#operating-and-testing); ordinary browsing and cellular DNS should then fail while authorized camera uploads work.
+
 - [ ] Both USB devices enumerate reliably; Wi-Fi uses the intended USB driver and permanent MAC.
 - [ ] ModemManager identifies EM060K, sees the SIM, reports unlocked state and registers on the carrier.
 - [ ] Configure accepts AP mode and the chosen regulatory channel on the USB radio.

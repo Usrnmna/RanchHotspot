@@ -4,6 +4,8 @@ An initialization framework for a Raspberry Pi 4 Model B (2 GB), BrosTrend AXE30
 
 **Validation:** Python checks and mocked integration tests pass on the development computer. Raspberry Pi OS installation, actual driver binding, SIM registration, AP operation, and client internet access have not been tested on the physical assembly. An unsupported hardware revision or modem firmware may require vendor support beyond initialization.
 
+**For the requested camera-only cellular policy, install the [timed upload gate](docs/UPLOAD_GATE.md) after baseline bring-up.** It adds active RTSP/JPEG camera pulling, signed cellular-side commands, kernel-enforced upload expiry and a boot lock. The ordinary internet-sharing instructions below describe the baseline before that extension is activated. Once the gate is installed, unrestricted browsing and cellular DNS/NTP are intentionally blocked.
+
 ## Included files
 
 | File | Purpose |
@@ -34,7 +36,7 @@ NetworkManager owns both connections, routing and its private DHCP/DNS process. 
 
 The starting profile uses WPA2-Personal with AES/CCMP, 2.4 GHz channel 6, and a private `10.42.0.1/24` LAN. It disables IPv6 on these two profiles to keep initial routing simple. LTE is marked metered, uses route metric 50, and prohibits roaming unless enabled in configuration. This does not impose a data cap. The radio is bound by permanent MAC and the modem by its discovered IMEI. The Pi's built-in Wi-Fi is not selected.
 
-**Uplink behavior:** sharing follows the Pi's routing table. LTE is preferred over ordinary higher-metric routes, but another Ethernet, Wi-Fi or VPN route can carry traffic. Disconnect temporary internet uplinks for LTE-only operation and acceptance testing. There is no LTE-only firewall or kill switch in this framework. Wi-Fi clients share a trusted LAN and can reach services exposed by the Pi; this is not a guest-isolation design.
+**Baseline uplink behavior (without the upload gate):** sharing follows the Pi's routing table. LTE is preferred over ordinary higher-metric routes, but another Ethernet, Wi-Fi or VPN route can carry traffic. Disconnect temporary internet uplinks for LTE-only baseline testing. The initializer alone does not enforce upload restrictions; the separately installed [upload gate](docs/UPLOAD_GATE.md) supplies that firewall. Wi-Fi clients share a trusted LAN and can reach services exposed by the Pi; this is not a guest-isolation design.
 
 ## First initialization
 

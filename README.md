@@ -4,6 +4,8 @@ A Raspberry Pi–based LTE hotspot intended to provide Wi-Fi around a rural hors
 
 > **Project status:** The [service framework](service/README.md) now includes an installer, initialization program, configuration template, boot service and offline tests. The complete assembly, carrier connection, and Wi-Fi access point have not yet been tested together.
 
+**Camera upload control:** The [timed upload gate](service/docs/UPLOAD_GATE.md) pulls a selected RTSP camera or time-lapse JPEG source only after a signed command arrives over cellular. It blocks direct hotspot internet forwarding, grants a receiver-specific upload window, and closes it automatically. Includes the controller, camera workers, command sender, installer, boot lock and tests. Configure actual camera/receiver addresses and verify an inbound-reachable cellular APN before deployment. This program runs on the Pi; modem firmware is unchanged.
+
 ## How it fits together
 
 ```text
@@ -56,7 +58,7 @@ Check the modem's hardware guide before final mounting, especially its antenna-p
 2. Confirm that both USB devices appear with `lsusb`. Identify the Wi-Fi interface with `nmcli device status` and check whether the modem appears in `mmcli -L` after installing or enabling ModemManager as needed.
 3. Establish the LTE data connection first. In NetworkManager, create a mobile-broadband connection for the SIM and enter the carrier APN if required. Confirm that the Pi can reach the internet **through LTE** before enabling internet sharing.
 4. Check whether the BrosTrend interface supports access point mode on the installed kernel and firmware (`iw list` shows supported interface modes). Configure a password-protected Wi-Fi hotspot on that interface using NetworkManager's hotspot feature. If the USB adapter cannot operate in access point mode, the Pi's built-in Wi-Fi is a possible alternative for initial testing.
-5. Connect a phone or laptop to the hotspot. Verify that it receives an IP address, can open an internet site, and continues to work after a Pi reboot.
+5. Connect a phone or laptop to the hotspot. For baseline commissioning, verify that it receives an IP address, can open an internet site, and continues to work after a Pi reboot. Then install the [upload gate](service/docs/UPLOAD_GATE.md) for controlled camera operation; ordinary internet browsing must be blocked after that installation.
 
 NetworkManager can provide the local address, DHCP, and connection sharing for a hotspot. Interface names, modem protocol, APN, and Wi-Fi band depend on the actual devices and carrier; record the working values before turning this into an unattended installation.
 

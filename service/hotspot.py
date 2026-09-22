@@ -270,7 +270,7 @@ def start(c):
     if LTE_UUID not in active:
         run('nmcli', '--wait', '120', 'connection', 'up', 'uuid', LTE_UUID)
     no_subnet_conflict(c, wifi)
-    print('Wi-Fi AP and LTE profiles active. Verify internet access from a Wi-Fi client.')
+    print('Wi-Fi AP and LTE profiles active. Verify the configured traffic policy from a Wi-Fi client.')
 
 
 def status():
