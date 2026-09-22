@@ -1,0 +1,28 @@
+{
+  "target": "ranch-01",
+  "wifi_interface": "wlan1",
+  "cellular_interface": "wwan0",
+  "lan_network": "10.42.0.0/24",
+  "management": [],
+  "control_port": 45991,
+  "max_duration": 900,
+  "clock_skew_seconds": 30,
+  "upload_bytes_per_second": 110000,
+  "streams": {
+    "barn-video": {
+      "kind": "rtsp",
+      "source_url": "rtsp://10.42.0.20:554/substream",
+      "receiver_url": "rtsp://203.0.113.10:8554/barn",
+      "receiver_ip": "203.0.113.10"
+    },
+    "gate-stills": {
+      "kind": "stills",
+      "source_url": "http://10.42.0.21/snapshot.jpg",
+      "receiver_url": "https://uploads.example.com/cameras/gate",
+      "receiver_ip": "203.0.113.10",
+      "interval_seconds": 30,
+      "max_image_bytes": 1048576,
+      "receiver_token": ""
+    }
+  }
+}
