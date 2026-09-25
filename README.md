@@ -1,5 +1,7 @@
 # Ranch LTE Hotspot
 
+**For manual review and changes:** start with the [file and function guide](service/docs/MANUAL_REVIEW.md) and the [complete settings/camera-source reference](service/docs/CONFIGURATION.md). Edit the top-level `service/` folder in this workspace; `ranch-hotspot-service/` and its ZIP are distributable copies, not automatically synchronized working folders.
+
 A Raspberry Pi–based LTE hotspot intended to provide Wi-Fi around a rural horse ranch or barn. The LTE modem connects to a cellular network through two external antennas, and the Pi shares that connection with nearby devices over Wi-Fi.
 
 > **Project status:** The [service framework](service/README.md) now includes an installer, initialization program, configuration template, boot service and offline tests. The complete assembly, carrier connection, and Wi-Fi access point have not yet been tested together.
