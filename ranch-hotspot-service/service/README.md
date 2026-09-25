@@ -1,5 +1,7 @@
 # Ranch LTE hotspot service framework
 
+**Review or customize:** [Manual code review](docs/MANUAL_REVIEW.md) maps every file and function, execution flow and advanced values embedded in the code. [Settings and camera sources](docs/CONFIGURATION.md) lists every JSON field and sender option, with units, accepted ranges and instructions for applying changes. Start there when adjusting the project by hand.
+
 An initialization framework for a Raspberry Pi 4 Model B (2 GB), BrosTrend AXE3000 USB radio, and Quectel EM060K-GL on a USB modem adapter with a SIM slot. The programs are implemented; normal setup requires configuration values and hardware verification, not additional application coding.
 
 **Validation:** Python checks and mocked integration tests pass on the development computer. Raspberry Pi OS installation, actual driver binding, SIM registration, AP operation, and client internet access have not been tested on the physical assembly. An unsupported hardware revision or modem firmware may require vendor support beyond initialization.
@@ -15,6 +17,13 @@ An initialization framework for a Raspberry Pi 4 Model B (2 GB), BrosTrend AXE30
 | `config/hotspot.example.json` | Configuration template; credentials are supplied locally on the Pi |
 | `systemd/ranch-hotspot.service` | Boot initialization with a 30-second retry after failure |
 | `tests/test_hotspot.py` | Offline configuration, profile, identity, subnet and lifecycle tests |
+| `upload_gate.py`, `stream_worker.py`, `send_magic.py` | Upload controller, camera relay, and signed command sender |
+| `install_upload_gate.py` | Installs and immediately activates the upload gate |
+| `config/upload-gate.example.json` | Camera sources, receivers, upload limits and control settings |
+| `systemd/ranch-upload-*.service`, `systemd/NetworkManager-upload-gate.conf` | Controller, early boot lock, and NetworkManager dependency |
+| `tests/test_upload_gate.py`, `tests/linux_gate_integration.py` | Gate/worker tests and separate privileged Linux packet checks |
+| `docs/CONFIGURATION.md`, `docs/MANUAL_REVIEW.md` | Editing reference and complete file/function guide |
+| `docs/UPLOAD_GATE.md` | Camera receiver requirements, gate setup and acceptance |
 | `docs/HARDWARE.md` | Wiring, adapter compatibility, drivers and antenna checks |
 | `docs/ACCEPTANCE.md` | Physical-device acceptance and troubleshooting steps |
 

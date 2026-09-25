@@ -1,3 +1,9 @@
+"""Offline hotspot contracts; Linux commands are mocked, files are temporary.
+
+Run from the service folder: python -m unittest discover -s tests -v
+Test names describe the rule under review. config() below is synthetic fixture
+data, not a source of deployment defaults or a real Wi-Fi/carrier credential.
+"""
 import importlib.util
 import json
 from pathlib import Path
@@ -11,12 +17,14 @@ SPEC.loader.exec_module(h)
 
 
 def config():
+    """Return a fresh valid fixture, including characters used to test escaping."""
     return dict(country='US', wifi_mac='00:11:22:33:44:55', ssid='Ranch Test',
                 wifi_password='test password;\\x', channel=6, lan_address='10.42.0.1/24',
                 apn='test.apn', lte_username='', lte_password='', allow_roaming=False)
 
 
 class FrameworkTests(unittest.TestCase):
+    """Configuration, rendered profiles, hardware checks and configure/start flow."""
     def test_template_requires_initialization(self):
         with self.assertRaises(ValueError):
             h.load(Path(__file__).parents[1] / 'config/hotspot.example.json')

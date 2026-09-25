@@ -1,0 +1,12 @@
+{
+  "country": "SET_COUNTRY",
+  "wifi_mac": "SET_USB_WIFI_MAC",
+  "ssid": "RanchHotspot",
+  "wifi_password": "SET_A_UNIQUE_PASSWORD",
+  "channel": 6,
+  "lan_address": "10.42.0.1/24",
+  "apn": "SET_CARRIER_APN",
+  "lte_username": "",
+  "lte_password": "",
+  "allow_roaming": false
+}

@@ -1,3 +1,5 @@
+# Early boot firewall. The NetworkManager drop-in requires this unit to succeed.
+# Review boot ordering together with NetworkManager-upload-gate.conf.
 [Unit]
 Description=Close cellular uploads before NetworkManager starts
 DefaultDependencies=no

@@ -1,0 +1,22 @@
+# Boot initializer. NetworkManager continues owning connections after this exits.
+# Retry/startup values below are seconds; JSON settings are under /etc/ranch-hotspot.
+[Unit]
+Description=Initialize Ranch LTE and USB Wi-Fi hotspot
+Wants=NetworkManager.service ModemManager.service
+After=NetworkManager.service ModemManager.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/ranch-hotspot/hotspot.py start
+# "active (exited)" means initialization succeeded, not continuous link monitoring.
+RemainAfterExit=yes
+Restart=on-failure
+# Retry initialization on failure; no periodic restart after success.
+RestartSec=30
+TimeoutStartSec=240
+# Files created by this process are private by default.
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,9 @@
+"""Gate/worker contracts with fake commands, replay files and loopback HTTP.
+
+Run from the service folder: python -m unittest discover -s tests -v
+No camera, receiver, cellular service or Linux firewall is used. SnapshotTests
+opens a local HTTP server; the remaining system/network effects are mocked.
+"""
 import copy
 import http.server
 import json
@@ -13,24 +19,29 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 import upload_gate as g
 import stream_worker as w
 
+# Public fixture key and fixed Unix milliseconds; never use this key on a Pi.
 KEY = bytes(range(32))
 NOW = 1800000000000
 
 
 def config():
+    """Load a fresh example config; example endpoints are never contacted here."""
     return g.load(Path(__file__).parents[1] / 'config/upload-gate.example.json')
 
 
 def command(**changes):
+    """Build a synthetic unsigned command, with optional field overrides."""
     return dict(v=1, target='ranch-01', stream='barn-video', action='start',
                 duration=60, issued_ms=NOW, nonce='ab' * 16, **{}) | changes
 
 
 def packet(**changes):
+    """Encode/sign a fixture command using the fixed test key."""
     return g.canonical(g.sign(command(**changes), KEY))
 
 
 class AuthenticationTests(unittest.TestCase):
+    """Signature/schema checks and durable rejection of reused/older commands."""
     def test_valid_signed_command(self):
         self.assertEqual(g.authenticate(packet(), KEY, config(), NOW), command())
 
@@ -71,6 +82,7 @@ class AuthenticationTests(unittest.TestCase):
 
 
 class ConfigurationTests(unittest.TestCase):
+    """Setting limits, generated firewall text and FFmpeg argument expectations."""
     def test_reject_injection_and_wide_permissions(self):
         for field, value in [('wifi_interface', 'wlan1" accept'), ('cellular_interface', 'lo'),
                              ('lan_network', '0.0.0.0/0'), ('max_duration', 99999),
@@ -110,6 +122,7 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class LifecycleTests(unittest.TestCase):
+    """Exercise a controller with injected clock/process/firewall dependencies."""
     def setUp(self):
         self.events = []
         self.now = 10
@@ -174,6 +187,7 @@ class LifecycleTests(unittest.TestCase):
 
 
 class SnapshotTests(unittest.TestCase):
+    """Local JPEG HTTP transfer plus failure cases; no remote endpoints needed."""
     def test_local_http_fetch_and_pinned_post(self):
         jpeg = b'\xff\xd8test-image\xff\xd9'
         received = []

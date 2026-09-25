@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Root-only Linux packet checks in disposable network namespaces; no real modem."""
+"""Root-only Linux packet checks in disposable network namespaces; no real modem.
+
+Run on a test Linux host with iproute2/nftables, from the project root:
+    sudo python3 service/tests/linux_gate_integration.py
+
+Creates a simulated router, receiver and camera using isolated network stacks,
+checks blocked/authorized/expired TCP traffic, then removes its processes and
+namespaces in finally. Addresses, UID 65534 and short lease durations below are
+test fixtures, not settings to copy to a deployed Pi. This test does not install
+the services or verify carrier delivery, camera codecs or real hardware.
+"""
 import json
 import os
 from pathlib import Path
@@ -15,10 +25,12 @@ import upload_gate as g
 
 
 def run(*args, **kwargs):
+    """Execute a checked command with captured text output and a 15-second limit."""
     return subprocess.run(args, check=True, text=True, capture_output=True, timeout=15, **kwargs)
 
 
 def main():
+    """Build disposable Linux networks, assert actual packet policy, then clean up."""
     if sys.platform != 'linux' or os.geteuid() != 0:
         raise SystemExit('Run with sudo on Linux. This test does not run on Windows.')
     if not all(shutil.which(name) for name in ('ip', 'nft')):
@@ -27,6 +39,7 @@ def main():
     router, receiver, camera = [f'rug-{suffix}-{x}' for x in ('r', 's', 'c')]
     namespaces, processes = [], []
     def ns(name, *args, **kwargs):
+        """Run a command inside one named test network namespace."""
         return run('ip', 'netns', 'exec', name, *args, **kwargs)
     probe = '''import os,socket,sys
 os.setgroups([]); os.setgid(int(sys.argv[2])); os.setuid(int(sys.argv[2]))
@@ -81,6 +94,7 @@ while True:
             if not ready.exists():
                 raise RuntimeError('Test receiver did not start')
             def denied(name, as_uid):
+                """Assert a TCP probe under this UID fails in the given namespace."""
                 p = subprocess.run(['ip', 'netns', 'exec', name, sys.executable,
                                     '-c', probe, 'unused', str(as_uid)], timeout=5)
                 if p.returncode != 2:

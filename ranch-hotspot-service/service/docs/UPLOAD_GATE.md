@@ -1,5 +1,7 @@
 # Timed camera uploads over cellular
 
+For individual field types, units and editing workflows, use [Settings and camera sources](CONFIGURATION.md). To trace functions and find advanced values embedded in code, use [Manual code review](MANUAL_REVIEW.md).
+
 This extension runs on the **Raspberry Pi 4 that routes through the Quectel EM060K-GL**. It does not replace or flash modem firmware. The Pi pulls a configured local camera feed only after receiving an authenticated UDP command through its cellular data interface.
 
 ## Behavior
@@ -121,7 +123,9 @@ sudo journalctl -u ranch-upload-gate -f
 sudo nft list table inet ranch_upload_gate
 ```
 
-To change configuration, edit your private source JSON and rerun the gate installer from the local console. Stop the controller first for immediate revocation if needed: `sudo systemctl stop ranch-upload-gate`. Stopping it leaves the restrictive firewall in place. Avoid a global `nft flush ruleset`: that would remove protection.
+To change configuration on an installed Pi, edit and validate your private source JSON, stop the controller, copy that file to `/etc/ranch-hotspot/upload-gate.json` with mode 600, and start the controller. Follow the [step-by-step configuration update](CONFIGURATION.md#camera-and-receiver-fields), using a local console when changing interfaces or management access. Startup reads the new JSON and replaces the firewall with all upload permissions closed. Stopping the controller leaves the restrictive firewall in place. Avoid a global `nft flush ruleset`: that would remove protection.
+
+Routine configuration changes do not require rerunning the installer. Both installers perform package downloads; an already active gate blocks public package servers, including through management Ethernet. An installer rerun requires a working APT proxy/mirror inside an allowed private management subnet or another deliberately planned maintenance procedure.
 
 To remove the gate deliberately, first disconnect LTE and disable the original hotspot's autoconnect as described in the base guide. Then disable both gate units, remove the NetworkManager drop-in, reload systemd, and delete only `table inet ranch_upload_gate` with nftables. Removing the firewall re-enables the underlying network policy; do not do it while expecting uploads to remain blocked. Preserve the key/database until you intentionally retire that key. Reusing an old key with deleted replay history weakens replay protection.
 

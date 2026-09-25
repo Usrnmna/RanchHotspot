@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
-"""Unprivileged camera relay. Started only by upload_gate.py via a private pipe."""
+"""Relay one camera stream during a controller-authorized upload session.
+
+Read this file after upload_gate.py: that controller validates the stream, opens
+the timed firewall permission, and starts this worker as the ranch-stream user.
+The selected stream arrives as JSON on standard input; do not run this program
+as a standalone way to grant internet access.
+
+Adjust camera and receiver URLs, JPEG size, and snapshot interval in
+/etc/ranch-hotspot/upload-gate.json (template: config/upload-gate.example.json).
+The controller adds pace_bytes_per_second from upload_bytes_per_second; it is
+not a field to add to the JSON file. RTSP bitrate/resolution are camera settings:
+this worker copies compressed video and does not resize or re-encode it.
+"""
 import base64
 import http.client
 import json
@@ -14,7 +26,15 @@ from upload_gate import endpoint
 
 
 def video_command(s):
+    """Return FFmpeg arguments for the validated RTSP stream dictionary ``s``.
+
+    Copy only the first video track, omit audio, and use TCP at both ends.
+    This function builds arguments; run() actually starts the child process.
+    URLs become FFmpeg process arguments, so embedded credentials may be visible
+    to users with sufficient local process-inspection access.
+    """
     # Camera must provide H.264 below the configured uplink budget. No Pi encoding.
+    # FFmpeg's RTSP input timeout below is in microseconds: 5,000,000 = 5 seconds.
     return ['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error',
             '-rtsp_transport', 'tcp', '-timeout', '5000000', '-i', s['source_url'],
             '-map', '0:v:0', '-an', '-c:v', 'copy', '-f', 'rtsp',
@@ -22,6 +42,12 @@ def video_command(s):
 
 
 def connection(url, fixed_ip=None):
+    """Return (HTTP connection, parsed URL, request path) without connecting yet.
+
+    fixed_ip selects the destination address while retaining the URL hostname
+    for HTTPS certificate verification/SNI and HTTP Host. The 10-second timeout
+    applies to socket operations, not a deadline for the entire upload session.
+    """
     u, port = endpoint(url, ('http', 'https'))
     cls = http.client.HTTPSConnection if u.scheme == 'https' else http.client.HTTPConnection
     kwargs = {'context': ssl.create_default_context()} if u.scheme == 'https' else {}
@@ -37,6 +63,12 @@ def connection(url, fixed_ip=None):
 
 
 def fetch_jpeg(s):
+    """Fetch one snapshot into memory; return JPEG bytes or raise on failure.
+
+    s uses source_url and max_image_bytes from the selected stream configuration.
+    URL-encoded camera credentials are sent as HTTP Basic authentication when
+    present. No redirects are followed and no image is written to disk.
+    """
     conn, u, path = connection(s['source_url'])
     headers = {'Accept': 'image/jpeg'}
     if u.username is not None:
@@ -47,7 +79,9 @@ def fetch_jpeg(s):
         r = conn.getresponse()
         if r.status != 200:
             raise RuntimeError('Camera did not return a JPEG (redirects are not followed)')
+        # Read one extra byte to distinguish an exact-size image from an overflow.
         image = r.read(s['max_image_bytes'] + 1)
+        # Check JPEG boundary markers only; this is not a full image decode.
         if len(image) > s['max_image_bytes'] or not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
             raise RuntimeError('Invalid or oversized JPEG')
         return image
@@ -56,15 +90,24 @@ def fetch_jpeg(s):
 
 
 def post_jpeg(s, image):
+    """POST JPEG bytes to the configured receiver, then require a 2xx response.
+
+    receiver_ip fixes the destination without cellular DNS; receiver_token is an
+    optional Bearer token. pace_bytes_per_second controls JPEG body pacing only;
+    the controller/firewall manages the allowed destination and session lifetime.
+    """
     conn, _, path = connection(s['receiver_url'], s['receiver_ip'])
     try:
         conn.putrequest('POST', path)
         conn.putheader('Content-Type', 'image/jpeg')
         conn.putheader('Content-Length', str(len(image)))
+        # This is upload-start Unix time in milliseconds, not a camera timestamp.
         conn.putheader('X-Captured-At-Ms', str(time.time_ns() // 1_000_000))
         if s['receiver_token']:
             conn.putheader('Authorization', 'Bearer ' + s['receiver_token'])
         conn.endheaders()
+        # Send at most 8 KiB at a time; bytes / (bytes per second) gives seconds.
+        # Network/TLS overhead is additional to this application-level pacing.
         for offset in range(0, len(image), 8192):
             chunk = image[offset:offset + 8192]
             conn.send(chunk)
@@ -77,6 +120,13 @@ def post_jpeg(s, image):
 
 
 def run(s):
+    """Run one RTSP child or repeat snapshots until failure/controller shutdown.
+
+    s is the controller-validated stream dictionary, including its derived pace.
+    There is no local retry: an error exits the worker and the controller closes
+    permission. Snapshot interval_seconds is the minimum start-to-start interval;
+    if fetching/uploading takes longer, the next cycle starts immediately.
+    """
     if s['kind'] == 'rtsp':
         result = subprocess.run(video_command(s), stdin=subprocess.DEVNULL,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -91,6 +141,7 @@ def run(s):
 
 if __name__ == '__main__':
     try:
+        # The controller closes the private pipe after writing one JSON object.
         run(json.load(sys.stdin))
     except Exception:
         # Do not leak camera passwords, receiver tokens or URLs through the journal.
